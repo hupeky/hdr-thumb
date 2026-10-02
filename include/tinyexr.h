@@ -7277,6 +7277,13 @@ static void CompressZip(unsigned char *dst, unsigned long long &compressedSize,
 static void DecompressZip(unsigned char *dst,
                           unsigned long *uncompressed_size /* inout */,
                           const unsigned char *src, unsigned long src_size) {
+  if (*uncompressed_size == src_size) {
+    // Chunk stored uncompressed: OpenEXR does this when compressing doesn't
+    // shrink it (upstream tinyexr issue 40).
+    memcpy(dst, src, src_size);
+    return;
+  }
+
   std::vector<unsigned char> tmpBuf(*uncompressed_size);
 
 #if TINYEXR_USE_MINIZ
@@ -7484,6 +7491,12 @@ static void CompressRle(unsigned char *dst, unsigned long long &compressedSize,
 static void DecompressRle(unsigned char *dst,
                           const unsigned long uncompressed_size,
                           const unsigned char *src, unsigned long src_size) {
+  if (uncompressed_size == src_size) {
+    // Chunk stored uncompressed (see DecompressZip).
+    memcpy(dst, src, src_size);
+    return;
+  }
+
   std::vector<unsigned char> tmpBuf(uncompressed_size);
 
   int ret = rleUncompress(static_cast<int>(src_size),
