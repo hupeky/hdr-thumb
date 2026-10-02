@@ -7043,6 +7043,13 @@ static const char *ReadAttribute(std::string *name, std::string *ty,
 
   tinyexr::swap4(reinterpret_cast<unsigned int *>(&data_len));
 
+  if (data_len == 0) {
+    // Zero-length attribute (Houdini writes empty comment/date/owner strings):
+    // data->at(0) below would throw. Store a lone '\0' instead.
+    data->assign(1, 0);
+    return p;
+  }
+
   data->resize(static_cast<size_t>(data_len));
   memcpy(&data->at(0), p, static_cast<size_t>(data_len));
   p += data_len;
